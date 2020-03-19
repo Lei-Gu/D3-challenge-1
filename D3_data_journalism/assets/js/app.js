@@ -1,4 +1,4 @@
-// SVG contained size
+// SVG size
 var svgWidth = Math.min(1140, window.innerWidth - 200);
 var svgHeight = 500;
 
@@ -12,25 +12,33 @@ var margin = {
 var width = svgWidth - margin.left - margin.right;
 var height = svgHeight - margin.top - margin.bottom;
 
-// Create an SVG wrapper, append an SVG group that will hold our chart,
-// and shift the latter by left and top margins.
+// Create an SVG wrapper
 var svg = d3
     .select("#scatter")
     .append("svg")
     .attr("width", svgWidth)
     .attr("height", svgHeight);
 
-// Append an SVG group
+// Append an SVG group, shift by left and top margins
 var chartGroup = svg.append("g")
     .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-// Initial Params
+// Initial X- and Y-axis Params
 var chosenXAxis = "poverty";
 var chosenYAxis = "healthcare";
 
-// function used for updating x or y scale var upon click on axis label
+
+/**
+ * function to update x or y scale var upon clicking on axis label
+ * @param {*} data - state data
+ * @param {string} chosenAxis - data column name of clicked axis label
+ * @returns {} linearScale
+ */
 function axisScale(data, chosenAxis) {
-    let scaleRange;
+    let minFactor = 0.8;
+    let maxFactor = 1.2;
+
+    let scaleRange = [];
     if (chosenAxis === "poverty"|chosenAxis === "age"|chosenAxis === "income") {
         // x-axis
         scaleRange = [0, width];
@@ -39,36 +47,29 @@ function axisScale(data, chosenAxis) {
         scaleRange = [height, 0];
     };
 
-    return d3.scaleLinear()
-        .domain([d3.min(data, d => d[chosenAxis]) * 0.8,
-            d3.max(data, d => d[chosenAxis]) * 1.2
+    let linearScale = d3.scaleLinear()
+        .domain([d3.min(data, d => d[chosenAxis]) * minFactor,
+            d3.max(data, d => d[chosenAxis]) * maxFactor
         ])
         .range(scaleRange);
+    return linearScale;
 };
 
 // function used for updating xAxis var upon click on axis label
 function renderXAxes(newXScale, xAxis) {
   let bottomAxis = d3.axisBottom(newXScale);
-
-  xAxis.transition()
-    .duration(1000)
-    .call(bottomAxis);
-
+  xAxis.transition().duration(1000).call(bottomAxis);
   return xAxis;
 }
 
 // function used for updating yAxis var upon click on axis label
 function renderYAxes(newYScale, yAxis) {
     let leftAxis = d3.axisLeft(newYScale);
-
-    yAxis.transition()
-      .duration(1000)
-      .call(leftAxis);
-
+    yAxis.transition().duration(1000).call(leftAxis);
     return yAxis;
-  }
+}
 
-// function to add/update state texts/labels
+// function to move state texts/labels
 function updateStateTexts(dataLabel, axis, newScale, chosenAxis) {
     dataLabel.transition()
         .duration(1000)
@@ -76,8 +77,7 @@ function updateStateTexts(dataLabel, axis, newScale, chosenAxis) {
     return dataLabel;
 }
 
-// function used for updating circles group with a transition to
-// new circles
+// function used for updating circles group with a transition to new circles
 function renderCircles(circlesGroup, axis, newScale, chosenAxis) {
     circlesGroup.transition()
         .duration(1000)
@@ -188,7 +188,6 @@ d3.csv("./assets/data/data.csv").then(function(data, err) {
         .attr("x", d => xLinearScale(d[chosenXAxis]))
         .attr("y", d => yLinearScale(d[chosenYAxis]))
         .attr("dy", ".35em")
-        // .attr("font-size", "10px")
         .text(d => d.abbr);
 
     // Create group for x-axis labels
